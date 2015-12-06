@@ -10,6 +10,7 @@ import gui.RaycastRendererPanel;
 import gui.TransferFunction2DEditor;
 import gui.TransferFunctionEditor;
 import java.awt.image.BufferedImage;
+import java.awt.Color;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import util.TFChangeListener;
@@ -30,6 +31,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     TransferFunction tFunc;
     TransferFunctionEditor tfEditor;
     TransferFunction2DEditor tfEditor2D;
+    public boolean MIP = false;
+    public boolean slicer = false;
+    public boolean compositing = false;
+    public boolean transfer2D = false;
     
     public RaycastRenderer() {
         panel = new RaycastRendererPanel(this);
@@ -231,7 +236,16 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         gl.glGetDoublev(GL2.GL_MODELVIEW_MATRIX, viewMatrix, 0);
 
         long startTime = System.currentTimeMillis();
-        slicer(viewMatrix);    
+        
+        if (MIP == true) {
+            MIP(viewMatrix);
+        }
+        if (slicer == true) {
+            slicer(viewMatrix);
+        }
+        if (compositing == true) {
+            Compositing(viewMatrix);
+        }
         
         long endTime = System.currentTimeMillis();
         double runningTime = (endTime - startTime);
@@ -280,6 +294,184 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     public void changed() {
         for (int i=0; i < listeners.size(); i++) {
             listeners.get(i).changed();
+        }
+    }
+    
+    // get a voxel from the volume data by trilinear interpolation    
+    double getVoxel2(double[] coord) {
+        
+        //XYZ coordinate
+        double x = coord[0];
+        double y = coord[1];
+        double z = coord[2];
+
+        // Get the box in xyz
+        int x0 = (int) Math.floor(coord[0]);
+        int y0 = (int) Math.floor(coord[1]);
+        int z0 = (int) Math.floor(coord[2]);
+        int x1 = x0+1;
+        int y1 = y0+1;
+        int z1 = z0+1;
+        //System.out.println("x = " + x + " y = " + y + " z = " +z);
+        
+        if ((x0 >= 0) && (x1 < volume.getDimX()) && (y0 >= 0) && (y1 < volume.getDimY())
+                && (z0 >= 0) && (z1 < volume.getDimZ())) {
+            double T_voxel =  volume.getVoxel(x0,y0,z0) * (x1-x) * (y1-y) * (z1-z) +
+                            volume.getVoxel(x1,y0,z0) * (x-x0) * (y1-y) * (z1-z) + 
+                            volume.getVoxel(x0,y1,z0) * (x1 - x) * (y-y0) * (z1 - z) +
+                            volume.getVoxel(x0,y0,z1) * (x1 - x) * (y1 - y) * (z-z0) +
+                            volume.getVoxel(x1,y0,z1) * (x-x0) * (y1 - y) * (z-z0) +
+                            volume.getVoxel(x0,y1,z1) * (x1 - x) * (y-y0) * (z-z0) +
+                            volume.getVoxel(x1,y1,z0) * (x-x0) * (y-y0) * (z1 - z) +
+                            volume.getVoxel(x1,y1,z1) * (x-x0) * (y-y0) * (z-z0);
+            		//System.out.println("T_VOXEL = " + T_voxel);					
+            return T_voxel;
+        } else {
+            return 0;
+        }
+    }
+     public void MIP(double[] viewMatrix) {
+        //use lower resolution for responsiveness
+        int scale = 2;
+        int imageheight = image.getHeight()/scale;
+        int imagewidth = image.getWidth()/scale;
+        int imageCenter = image.getWidth()/2;   
+        //System.out.println("j0 = " + (imageheight/2 - imageCenter) + " jn = " + (imageheight/2 + imageCenter));
+        // clear image and put image in the center
+        for (int j = imageCenter- imageheight/2; j < imageheight/2 + imageCenter; j++) {
+            for (int i = imageCenter- imagewidth/2; i < imagewidth/2 + imageCenter; i++) {
+              image.setRGB(i, j, 0);
+            }
+        }
+        // vector uVec and vVec define a plane through the origin, 
+        // perpendicular to the view vector viewVec
+        double[] viewVec = new double[3];
+        double[] uVec = new double[3];
+        double[] vVec = new double[3];
+        VectorMath.setVector(viewVec, viewMatrix[2], viewMatrix[6], viewMatrix[10]);
+        VectorMath.setVector(uVec, viewMatrix[0], viewMatrix[4], viewMatrix[8]);
+        VectorMath.setVector(vVec, viewMatrix[1], viewMatrix[5], viewMatrix[9]);
+
+        // image is square
+        
+        double[] pixelCoord = new double[3];
+        double[] volumeCenter = new double[3];
+        VectorMath.setVector(volumeCenter, volume.getDimX() / 2, volume.getDimY() / 2, volume.getDimZ() / 2);
+        int DimZ = volume.getDimZ();
+        // sample on a plane through the origin of the volume data
+        double max = volume.getMaximum();
+        int sampling_distance = 2;
+        for (int j = imageCenter - imageheight/2; j < imageheight/2 + imageCenter; j++) {
+            for (int i = imageCenter - imagewidth/2; i < imagewidth/2 + imageCenter; i++) {
+                //Cast a ray!! 
+                //System.out.println("j = " + (j-imageheight/2 - imageCenter)*scale + " i = " + (i-imagewidth/2 - imageCenter)*scale);
+                int maxvalue = 0;
+                for (int k = 0; k < DimZ;k++){
+                   //(i - (imageCenter - imagewidth/2)) shift i = 0
+                   pixelCoord[0] = uVec[0] * ((i - (imageCenter - imagewidth/2))*scale - imageCenter) + vVec[0] * ((j - (imageCenter - imageheight/2))*scale - imageCenter)
+                        + volumeCenter[0] + k * sampling_distance * viewVec[0];
+                   pixelCoord[1] = uVec[1] * ((i - (imageCenter - imagewidth/2))*scale - imageCenter) + vVec[1] * ((j - (imageCenter - imageheight/2))*scale - imageCenter)
+                        + volumeCenter[1] + k * sampling_distance * viewVec[1];
+                   pixelCoord[2] = uVec[2] * ((i - (imageCenter - imagewidth/2))*scale - imageCenter) + vVec[2] * ((j - (imageCenter - imageheight/2))*scale- imageCenter)
+                        + volumeCenter[2] + k * sampling_distance * viewVec[2];
+                   int val = (int) getVoxel2(pixelCoord);
+                   if(val > maxvalue ) maxvalue = val; //MIP
+                   if(pixelCoord[2]>= DimZ) break;
+                }
+                // Apply the transfer function to obtain a color
+                //System.out.println("max value = " + maxvalue);
+                TFColor voxelColor = tFunc.getColor(maxvalue);
+				
+                // BufferedImage expects a pixel color packed as ARGB in an int
+                int c_alpha = voxelColor.a <= 1.0 ? (int) Math.floor(voxelColor.a * 255) : 255;
+                int c_red = voxelColor.r <= 1.0 ? (int) Math.floor(voxelColor.r * 255) : 255;
+                int c_green = voxelColor.g <= 1.0 ? (int) Math.floor(voxelColor.g * 255) : 255;
+                int c_blue = voxelColor.b <= 1.0 ? (int) Math.floor(voxelColor.b * 255) : 255;
+                
+                int pixelColor = (c_alpha << 24) | (c_red << 16) | (c_green << 8) | c_blue;
+                image.setRGB(i, j, pixelColor);
+            }
+        }
+    }
+    
+     void Compositing (double[] viewMatrix) {
+        //Back to front
+        //use lower resolution for responsiveness
+        int scale = 3;
+        int imageheight = image.getHeight()/scale;
+        int imagewidth = image.getWidth()/scale;
+        int imageCenter = image.getWidth()/2;   
+        //System.out.println("j0 = " + (imageheight/2 - imageCenter) + " jn = " + (imageheight/2 + imageCenter));
+        // clear image and put image in the center
+        for (int j = imageCenter- imageheight/2; j < imageheight/2 + imageCenter; j++) {
+            for (int i = imageCenter- imagewidth/2; i < imagewidth/2 + imageCenter; i++) {
+              image.setRGB(i, j, 0);
+            }
+        }
+
+        // vector uVec and vVec define a plane through the origin, 
+        // perpendicular to the view vector viewVec
+        double[] viewVec = new double[3];
+        double[] uVec = new double[3];
+        double[] vVec = new double[3];
+        VectorMath.setVector(viewVec, viewMatrix[2], viewMatrix[6], viewMatrix[10]);
+        VectorMath.setVector(uVec, viewMatrix[0], viewMatrix[4], viewMatrix[8]);
+        VectorMath.setVector(vVec, viewMatrix[1], viewMatrix[5], viewMatrix[9]);
+
+        // image is square
+        
+
+        double[] pixelCoord = new double[3];
+        double[] volumeCenter = new double[3];
+        VectorMath.setVector(volumeCenter, volume.getDimX() / 2, volume.getDimY() / 2, volume.getDimZ() / 2);
+        int DimZ = volume.getDimZ();
+        // sample on a plane through the origin of the volume data
+        double max = volume.getMaximum();
+        int sampling_distance = 4;
+        for (int j = imageCenter - imageheight/2; j < imageheight/2 + imageCenter; j++) {
+            for (int i = imageCenter - imagewidth/2; i < imagewidth/2 + imageCenter; i++) {
+                //Cast a ray!! 
+                //System.out.println("j = " + (j-imageheight/2 - imageCenter)*scale + " i = " + (i-imagewidth/2 - imageCenter)*scale);
+                double accumulatedColorR = 0;
+                double accumulatedColorG = 0;
+                double accumulatedColorB = 0;
+                double accumulatedopacity = 0;
+                for (int k = 0; k < DimZ;k++){
+
+                   //(i - (imageCenter - imagewidth/2)) shift i = 0
+                   pixelCoord[0] = uVec[0] * ((i - (imageCenter - imagewidth/2))*scale - imageCenter) + vVec[0] * ((j - (imageCenter - imageheight/2))*scale - imageCenter)
+                        + volumeCenter[0] + k * sampling_distance * viewVec[0];
+                   pixelCoord[1] = uVec[1] * ((i - (imageCenter - imagewidth/2))*scale - imageCenter) + vVec[1] * ((j - (imageCenter - imageheight/2))*scale - imageCenter)
+                        + volumeCenter[1] + k * sampling_distance * viewVec[1];
+                   pixelCoord[2] = uVec[2] * ((i - (imageCenter - imagewidth/2))*scale - imageCenter) + vVec[2] * ((j - (imageCenter - imageheight/2))*scale- imageCenter)
+                        + volumeCenter[2] + k * sampling_distance * viewVec[2];
+                   int val = (int) getVoxel2(pixelCoord);
+                   
+                   // Apply the transfer function to obtain a color
+                   TFColor voxelColor = tFunc.getColor(val);
+                   
+                   // Levoy's Compositing front to end
+                   if (voxelColor.a > 0) {
+                     accumulatedColorR = voxelColor.r * voxelColor.a + accumulatedColorR * (1-voxelColor.a) ;
+                     accumulatedColorG = voxelColor.g * voxelColor.a+ accumulatedColorG * (1-voxelColor.a) ;
+                     accumulatedColorB = voxelColor.b * voxelColor.a+ accumulatedColorB * (1-voxelColor.a) ;
+                     accumulatedopacity = accumulatedopacity * (1 - voxelColor.a) + voxelColor.a;
+                   }
+                   
+                   if(pixelCoord[2]>= DimZ) break;
+                   if(accumulatedopacity>=1) break;
+                }
+                	   
+                // BufferedImage expects a pixel color packed as ARGB in an int
+                int c_alpha = accumulatedopacity <= 1.0 ? (int) Math.floor(accumulatedopacity * 255) : 255;
+                int c_red = accumulatedColorR <= 1.0 ? (int) Math.floor(accumulatedColorR * 255) : 255;
+                int c_green = accumulatedColorG <= 1.0 ? (int) Math.floor(accumulatedColorG * 255) : 255;
+                int c_blue = accumulatedColorB <= 1.0 ? (int) Math.floor(accumulatedColorB * 255) : 255;
+
+                int pixelColor = (c_alpha << 24) | (c_red << 16) | (c_green << 8) | c_blue;
+      
+                image.setRGB(i, j, pixelColor);
+            }
         }
     }
 }
