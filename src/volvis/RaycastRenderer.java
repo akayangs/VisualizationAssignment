@@ -17,7 +17,6 @@ import javax.media.opengl.GL2;
 import util.TFChangeListener;
 import util.VectorMath;
 import java.util.Vector;
-import java.nio.Buffer;
 import java.nio.FloatBuffer;
 import volume.GradientVolume;
 import volume.Volume;
@@ -305,6 +304,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     }
     private BufferedImage image;
     private double[] viewMatrix = new double[4 * 4];
+    private int[] viewMatrix2 = new int[4 * 4];
 
     @Override
     public void changed() {
@@ -567,7 +567,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                    int val = (int) getVoxel2(pixelCoord);
                    index=k;
                    buffer[index] = val;
-                   double gradientmagnitude = GV.getgradientmagnitude(pixelCoord);
+                   double gradientmagnitude = GV.getGradient(pixelCoord);
                    gradientbuffer[index] = gradientmagnitude;
                    totalGradient = totalGradient + gradientmagnitude;
                    //Calculate opacity in the buffer
@@ -618,8 +618,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         int imageheight = image.getHeight()/scale;
         int imagewidth = image.getWidth()/scale;
         int imageCenter = image.getWidth()/2;   
-		int DimZ = volume.getDimZ();
-		double gradmax = 0;
+        int DimZ = volume.getDimZ();
+	double gradmax = 0;
         double gradmin = 999;
 		
 		// vector uVec and vVec define a plane through the origin, 
@@ -650,8 +650,8 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                         + volumeCenter[1] + k * sampling_distance * viewVec[1];
                    pixelCoord[2] = uVec[2] * ((i - (imageCenter - imagewidth/2))*scale - imageCenter) + vVec[2] * ((j - (imageCenter - imageheight/2))*scale- imageCenter)
                         + volumeCenter[2] + k * sampling_distance * viewVec[2];
-                   if(gradmax<GV.getgradientmagnitude(pixelCoord)) gradmax = GV.getgradientmagnitude(pixelCoord);
-                   if(gradmin>GV.getgradientmagnitude(pixelCoord)) gradmin = GV.getgradientmagnitude(pixelCoord);                 
+                   if(gradmax<GV.getGradient(pixelCoord)) gradmax = GV.getGradient(pixelCoord);
+                   if(gradmin>GV.getGradient(pixelCoord)) gradmin = GV.getGradient(pixelCoord);                 
                    if(pixelCoord[2]>= DimZ) break;
                 }
             }
@@ -682,7 +682,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                    int val = (int) getVoxel2(pixelCoord);
                    index=k;
                    buffer[index] = val;
-                   double gradientmagnitude = GV.getgradientmagnitude(pixelCoord);
+                   double gradientmagnitude = GV.getGradient(pixelCoord);
                    gradientbuffer[index] = gradientmagnitude;
                    //Calculate opacity in the buffer
                    if(pixelCoord[2]>= DimZ) break;

@@ -10,18 +10,18 @@ package volume;
  */
 public class VoxelGradient {
 
-    public float x, y, z;
-    public float mag;
+    public double x, y, z;
+    public double mag;
     
     public VoxelGradient() {
         x = y = z = mag = 0.0f;
     }
     
-    public VoxelGradient(float gx, float gy, float gz) {
+    public VoxelGradient(double gx, double gy, double gz) {
         x = gx;
         y = gy;
         z = gz;
-        mag = (float) Math.sqrt(x*x + y*y + z*z);
+        mag = (double) Math.sqrt(x*x + y*y + z*z);
     }
     
 }
