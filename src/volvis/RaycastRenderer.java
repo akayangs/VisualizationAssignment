@@ -35,6 +35,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     TransferFunction tFunc;
     TransferFunctionEditor tfEditor;
     TransferFunction2DEditor tfEditor2D;
+    GradientVolume GV;
     public boolean MIP = false;
     public boolean slicer = false;
     public boolean compositing = false;
@@ -93,7 +94,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     }
      
 
-    short getVoxel(double[] coord) {
+    public short getVoxel(double[] coord) {
 
         if (coord[0] < 0 || coord[0] > volume.getDimX() || coord[1] < 0 || coord[1] > volume.getDimY()
                 || coord[2] < 0 || coord[2] > volume.getDimZ()) {
@@ -313,7 +314,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     }
     
     // get a voxel from the volume data by trilinear interpolation    
-    double getVoxel2(double[] coord) {
+    public double getVoxel2(double[] coord) {
         
         //XYZ coordinate
         double x = coord[0];
@@ -344,92 +345,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         } else {
             return 0;
         }
-    }
-double getmagnitude(double[] vector){
-   return Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
-}   
+    }  
  
   //Calculate gradient trilinear interpolation
- double getgradientmagnitude(double[] coord) {
-        double[] gradient = new double[3];
-        double[] coord1 = new double[3];
-        double[] coord2 = new double[3];
-        
-        //X
-        coord1[0] = coord[0] + 1;  //x+1
-        coord1[1] = coord[1];
-        coord1[2] = coord[2];
-        
-        coord2[0] = coord[0] - 1;  //x-1
-        coord2[1] = coord[1];
-        coord2[2] = coord[2];
-                
-        gradient[0] = 0.5 * (getVoxel2(coord1) - getVoxel2(coord2));
-        
-//y
-        coord1[0] = coord[0]-1;
-        coord1[1] = coord[1]+1;//y+1
-        coord1[2] = coord[2];
-        
-        coord2[0] = coord[0]+1;
-        coord2[1] = coord[1] -1;//y-1
-        coord2[2] = coord[2];
-        gradient[1] = 0.5 * (getVoxel2(coord1) - getVoxel2(coord2));
-        
-        //z
-        coord1[0] = coord[0];
-        coord1[1] = coord[1]-1;
-        coord1[2] = coord[2]+1;//z+1
-        
-        coord2[0] = coord[0];
-        coord2[1] = coord[1]+1;
-        coord2[2] = coord[2]-1;//z-1
-        
-        gradient[2] = 0.5 * (getVoxel2(coord1) - getVoxel2(coord2));
-        
-        return getmagnitude(gradient);
- }
  
-   //Calculate gradient Nearest Neighbour
- double getgradientmagnitude2(double[] coord) {
-        double[] gradient = new double[3];
-        double[] coord1 = new double[3];
-        double[] coord2 = new double[3];
-        
-        //X
-        coord1[0] = coord[0] + 1;  //x+1
-        coord1[1] = coord[1];
-        coord1[2] = coord[2];
-        
-        coord2[0] = coord[0] - 1;  //x-1
-        coord2[1] = coord[1];
-        coord2[2] = coord[2];
-                
-        gradient[0] = 0.5 * (getVoxel(coord1) - getVoxel(coord2));
-        
-//y
-        coord1[0] = coord[0] - 1;
-        coord1[1] = coord[1]+1;//y+1
-        coord1[2] = coord[2];
-        
-        coord2[0] = coord[0] + 1;
-        coord2[1] = coord[1] -1;//y-1
-        coord2[2] = coord[2];
-        gradient[1] = 0.5 * (getVoxel(coord1) - getVoxel(coord2));
-        
-        //z
-        coord1[0] = coord[0];
-        coord1[1] = coord[1] - 1;
-        coord1[2] = coord[2]+1;//z+1
-        
-        coord2[0] = coord[0];
-        coord2[1] = coord[1] + 1;
-        coord2[2] = coord[2]-1;//z-1
-        
-        gradient[2] = 0.5 * (getVoxel(coord1) - getVoxel(coord2));
-        
-        return getmagnitude(gradient);
- }
  
     double CalculateOpacity(double fx, double alphan, double fvn, double alphanplus1, double fvnplus1,double gradmagnitude){
     double opacity;
@@ -648,7 +567,7 @@ double getmagnitude(double[] vector){
                    int val = (int) getVoxel2(pixelCoord);
                    index=k;
                    buffer[index] = val;
-                   double gradientmagnitude = getgradientmagnitude(pixelCoord);
+                   double gradientmagnitude = GV.getgradientmagnitude(pixelCoord);
                    gradientbuffer[index] = gradientmagnitude;
                    totalGradient = totalGradient + gradientmagnitude;
                    //Calculate opacity in the buffer
@@ -731,8 +650,8 @@ double getmagnitude(double[] vector){
                         + volumeCenter[1] + k * sampling_distance * viewVec[1];
                    pixelCoord[2] = uVec[2] * ((i - (imageCenter - imagewidth/2))*scale - imageCenter) + vVec[2] * ((j - (imageCenter - imageheight/2))*scale- imageCenter)
                         + volumeCenter[2] + k * sampling_distance * viewVec[2];
-                   if(gradmax<getgradientmagnitude(pixelCoord)) gradmax = getgradientmagnitude(pixelCoord);
-                   if(gradmin>getgradientmagnitude(pixelCoord)) gradmin = getgradientmagnitude(pixelCoord);                 
+                   if(gradmax<GV.getgradientmagnitude(pixelCoord)) gradmax = GV.getgradientmagnitude(pixelCoord);
+                   if(gradmin>GV.getgradientmagnitude(pixelCoord)) gradmin = GV.getgradientmagnitude(pixelCoord);                 
                    if(pixelCoord[2]>= DimZ) break;
                 }
             }
@@ -763,7 +682,7 @@ double getmagnitude(double[] vector){
                    int val = (int) getVoxel2(pixelCoord);
                    index=k;
                    buffer[index] = val;
-                   double gradientmagnitude = getgradientmagnitude(pixelCoord);
+                   double gradientmagnitude = GV.getgradientmagnitude(pixelCoord);
                    gradientbuffer[index] = gradientmagnitude;
                    //Calculate opacity in the buffer
                    if(pixelCoord[2]>= DimZ) break;
