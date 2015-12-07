@@ -14,6 +14,7 @@ import volume.GradientVolume;
 import volume.Volume;
 import volume.VoxelGradient;
 import volvis.TFColor;
+import volvis.TransferFunction2D;
 
 /**
  *
@@ -24,6 +25,7 @@ public class TransferFunction2DEditor extends javax.swing.JPanel {
     private Volume vol;
     private GradientVolume gradvol;
     private TransferFunction2DView tfView;
+    private TransferFunction2D tf2DFunc;
     public TriangleWidget triangleWidget;
     public int xbins, ybins;
     public double[] histogram;
