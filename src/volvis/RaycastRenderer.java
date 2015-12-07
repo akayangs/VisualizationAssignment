@@ -492,7 +492,7 @@ double getmagnitude(double[] vector){
         }
     }
     
-     void Compositing (double[] viewMatrix) {
+    void Compositing (double[] viewMatrix) {
         //Back to front
         //use lower resolution for responsiveness
         int scale = 3;
@@ -572,7 +572,8 @@ double getmagnitude(double[] vector){
             }
         }
     }
-           void Region (double[] viewMatrix,double alphan, double fvn, double alphanplus1, double fvnplus1) {
+    
+     void Region (double[] viewMatrix,double alphan, double fvn, double alphanplus1, double fvnplus1) {
 		// Region based surface using local normalization one per ray
 		
         //use lower resolution for responsiveness
@@ -675,7 +676,7 @@ double getmagnitude(double[] vector){
         }
     }
 
-	 void Region2 (double[] viewMatrix,double alphan, double fvn, double alphanplus1, double fvnplus1) {
+    void Region2 (double[] viewMatrix,double alphan, double fvn, double alphanplus1, double fvnplus1) {
 		// Region based surface using global normalization 
 		
         //use lower resolution for responsiveness
