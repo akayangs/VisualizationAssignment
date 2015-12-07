@@ -20,46 +20,12 @@ public class GradientVolume {
         compute();
         maxmag = -1.0;
     }
+    double getMagnitude(double[] vector){
+        return Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);
+    }
    
-    public double getGradient(double[] coord) {
-        double[] gradient = new double[3];
-        double[] coord1 = new double[3];
-        double[] coord2 = new double[3];
-        //X
-        coord1[0] = coord[0] + 1;  //x+1
-        coord1[1] = coord[1];
-        coord1[2] = coord[2];
-        
-        coord2[0] = coord[0] - 1;  //x-1
-        coord2[1] = coord[1];
-        coord2[2] = coord[2];
-                
-        gradient[0] = 0.5 * (RR.getVoxel2(coord1) - RR.getVoxel2(coord2));
-        
-        //y
-        coord1[0] = coord[0]-1;
-        coord1[1] = coord[1]+1;//y+1
-        coord1[2] = coord[2];
-        
-        coord2[0] = coord[0]+1;
-        coord2[1] = coord[1] -1;//y-1
-        coord2[2] = coord[2];
-        gradient[1] = 0.5 * (RR.getVoxel2(coord1) - RR.getVoxel2(coord2));
-        
-        //z
-        coord1[0] = coord[0];
-        coord1[1] = coord[1]-1;
-        coord1[2] = coord[2]+1;//z+1
-        
-        coord2[0] = coord[0];
-        coord2[1] = coord[1]+1;
-        coord2[2] = coord[2]-1;//z-1
-        
-        gradient[2] = 0.5 * (RR.getVoxel2(coord1) - RR.getVoxel2(coord2));
-        
-        VoxelGradient VG = new VoxelGradient(gradient[0], gradient[1], gradient[2]);
-        
-        return VG.mag;
+    public VoxelGradient getGradient(int x, int y, int z) {
+        return data[x + dimX * (y + dimY * z)];
     }
 
     
@@ -94,9 +60,49 @@ public class GradientVolume {
             data[i] = zero;
         }                
     }
+    
+    public double getgradientmagnitude(double[] coord) {
+        double[] gradient = new double[3];
+        double[] coord1 = new double[3];
+        double[] coord2 = new double[3];
+        
+        //X
+        coord1[0] = coord[0] + 1;  //x+1
+        coord1[1] = coord[1];
+        coord1[2] = coord[2];
+        
+        coord2[0] = coord[0] - 1;  //x-1
+        coord2[1] = coord[1];
+        coord2[2] = coord[2];
+                
+        gradient[0] = 0.5 * (RR.getVoxel2(coord1) - RR.getVoxel2(coord2));
+        
+//y
+        coord1[0] = coord[0]-1;
+        coord1[1] = coord[1]+1;//y+1
+        coord1[2] = coord[2];
+        
+        coord2[0] = coord[0]+1;
+        coord2[1] = coord[1] -1;//y-1
+        coord2[2] = coord[2];
+        gradient[1] = 0.5 * (RR.getVoxel2(coord1) - RR.getVoxel2(coord2));
+        
+        //z
+        coord1[0] = coord[0];
+        coord1[1] = coord[1]-1;
+        coord1[2] = coord[2]+1;//z+1
+        
+        coord2[0] = coord[0];
+        coord2[1] = coord[1]+1;
+        coord2[2] = coord[2]-1;//z-1
+        
+        gradient[2] = 0.5 * (RR.getVoxel2(coord1) - RR.getVoxel2(coord2));
+        
+        return getMagnitude(gradient);
+ }
  
    //Calculate gradient Nearest Neighbour
-    /*public double getgradientmagnitude2(double[] coord) {
+    public double getgradientmagnitude2(double[] coord) {
         double[] gradient = new double[3];
         double[] coord1 = new double[3];
         double[] coord2 = new double[3];
@@ -134,7 +140,7 @@ public class GradientVolume {
         gradient[2] = 0.5 * (RR.getVoxel(coord1) - RR.getVoxel(coord2));
         
         return getMagnitude(gradient);
- }*/
+ }
     
     public double getMaxGradientMagnitude() {
         if (maxmag >= 0) {
