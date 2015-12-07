@@ -18,6 +18,7 @@ public class GradientVolume {
         data = new VoxelGradient[dimX * dimY * dimZ];
         compute();
         maxmag = -1.0;
+        //test
     }
     double getMagnitude(double[] vector){
         return Math.sqrt(vector[0]*vector[0] + vector[1]*vector[1] + vector[2]*vector[2]);

@@ -6,6 +6,7 @@ package volvis;
 
 import com.jogamp.opengl.util.texture.Texture;
 import com.jogamp.opengl.util.texture.awt.AWTTextureIO;
+import com.jogamp.common.nio.Buffers;
 import gui.RaycastRendererPanel;
 import gui.TransferFunction2DEditor;
 import gui.TransferFunctionEditor;
@@ -15,6 +16,9 @@ import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import util.TFChangeListener;
 import util.VectorMath;
+import java.util.Vector;
+import java.nio.Buffer;
+import java.nio.FloatBuffer;
 import volume.GradientVolume;
 import volume.Volume;
 import volume.VoxelGradient;
@@ -34,7 +38,10 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
     public boolean MIP = false;
     public boolean slicer = false;
     public boolean compositing = false;
+    public boolean phongShading = false;
+    public boolean screenIsCleaned = true;
     public boolean transfer2D = false;
+    
     
     public RaycastRenderer() {
         panel = new RaycastRendererPanel(this);
@@ -237,6 +244,11 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
 
         long startTime = System.currentTimeMillis();
         
+        if (screenIsCleaned == false) {
+            gl.glClearColor(0.0f, 0.0f, 0.0f, 1.0f );
+            gl.glClear(GL2.GL_COLOR_BUFFER_BIT | GL2.GL_DEPTH_BUFFER_BIT);
+            screenIsCleaned = true;
+        }
         if (MIP == true) {
             MIP(viewMatrix);
         }
@@ -245,6 +257,9 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
         }
         if (compositing == true) {
             Compositing(viewMatrix);
+        }
+        if (phongShading == true) {
+            PhongShading(gl);
         }
         
         long endTime = System.currentTimeMillis();
@@ -785,5 +800,29 @@ double getmagnitude(double[] vector){
                 image.setRGB(i, j, pixelColor);
             }
         }
+    }
+    
+    public void PhongShading(GL2 gl) {
+        gl.glShadeModel(GL2.GL_SMOOTH);
+        gl.glEnable(GL2.GL_NORMALIZE);
+        gl.glEnable(GL2.GL_LIGHTING);
+        gl.glEnable(GL2.GL_LIGHT0);
+        
+        float[] Al = {0.2f, 0.2f, 0.2f, 1.0f};
+        FloatBuffer AlBuffer = Buffers.newDirectFloatBuffer(Al);
+        gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, AlBuffer);
+        
+        float[] As = {0.1f, 0.1f, 0.1f, 1.0f};
+        FloatBuffer AsBuffer = Buffers.newDirectFloatBuffer(As);
+        gl.glLightModelfv(GL2.GL_LIGHT_MODEL_AMBIENT, AsBuffer);
+        float[] lightColor = {1.0f, 1.0f, 1.0f, 1.0f};
+        float[] lightPos = {1.0f, 1.0f, 1.0f, 1.0f};
+        
+        //float[] diffuse = 
+        
+        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_POSITION,lightPos,0);
+        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_DIFFUSE, lightColor, 0);
+        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_AMBIENT, lightColor, 0);
+        gl.glLightfv(GL2.GL_LIGHT0, GL2.GL_SPECULAR, lightColor, 0);   
     }
 }
