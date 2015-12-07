@@ -66,7 +66,7 @@ public class GradientVolume {
         z = 0.5 * (getVoxel2(coord1) - getVoxel2(coord2));
       
 
-        return getMagnitude(gradient);
+        return getMagnitude(gradient);//
     }
 
     
