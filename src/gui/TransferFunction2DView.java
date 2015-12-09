@@ -77,9 +77,9 @@ public class TransferFunction2DView extends javax.swing.JPanel {
         g2.setColor(Color.black);
         baseControlPoint = new Ellipse2D.Double(xpos - DOTSIZE / 2, ypos - DOTSIZE, DOTSIZE, DOTSIZE);
         g2.fill(baseControlPoint);
-        g2.drawLine(xpos, ypos, xpos - (int) (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude), 0);
-        g2.drawLine(xpos, ypos, xpos + (int) (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude), 0);
-        radiusControlPoint = new Ellipse2D.Double(xpos + (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude) - DOTSIZE / 2,  0, DOTSIZE, DOTSIZE);
+        g2.drawLine(xpos , ypos, xpos - ((int) (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude)/16), 0);
+        g2.drawLine(xpos, ypos, xpos + ((int) (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude)/16), 0);
+        radiusControlPoint = new Ellipse2D.Double(xpos + (ed.triangleWidget.radius * binWidth * ed.maxGradientMagnitude)/16 - DOTSIZE / 2,  0, DOTSIZE, DOTSIZE);
         g2.fill(radiusControlPoint);
     }
     
@@ -122,7 +122,7 @@ public class TransferFunction2DView extends javax.swing.JPanel {
                 if (selectedBaseControlPoint) {
                     ed.triangleWidget.baseIntensity = (short) (dragEnd.x / binWidth);
                 } else if (selectedRadiusControlPoint) {
-                    ed.triangleWidget.radius = (dragEnd.x - (ed.triangleWidget.baseIntensity * binWidth))/(binWidth*ed.maxGradientMagnitude);
+                    ed.triangleWidget.radius = (dragEnd.x - (ed.triangleWidget.baseIntensity * binWidth))/(binWidth*ed.maxGradientMagnitude)*16;
                 }
                 ed.setSelectedInfo();
                 
