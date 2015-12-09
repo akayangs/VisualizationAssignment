@@ -26,6 +26,7 @@ public class TransferFunction2DView extends javax.swing.JPanel {
     private final int DOTSIZE = 8;
     public Ellipse2D.Double baseControlPoint, radiusControlPoint;
     boolean selectedBaseControlPoint, selectedRadiusControlPoint;
+    public int intensityOut;
     
     
     /**
@@ -66,6 +67,7 @@ public class TransferFunction2DView extends javax.swing.JPanel {
             for (int x = 0; x < ed.xbins; x++) {
                 if (ed.histogram[y * ed.xbins + x] > 0) {
                     int intensity = (int) Math.floor(255 * (1.0 - Math.log(ed.histogram[y * ed.xbins + x]) / maxHistoMagnitude));
+                    intensityOut = intensity;
                     g2.setColor(new Color(intensity, intensity, intensity));
                     g2.fill(new Rectangle2D.Double(x * binWidth, h - (y * binHeight), binWidth, binHeight));
                 }

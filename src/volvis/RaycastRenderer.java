@@ -584,14 +584,16 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             listeners.get(i).changed();
         }
     }
-
-    double CalculateOpacity(double fx, double alphan, double fvn, double alphanplus1, double fvnplus1,double gradmagnitude) {
-        double opacity;
-        if ((fx >= fvn) && (fx<=fvnplus1)) {
-            opacity = gradmagnitude * ( (alphanplus1*(fx - fvn)/(fvnplus1 - fvn)) + (alphan*(fvnplus1 - fx)/(fvnplus1-fvn)));
-            return opacity;
+    
+    public double calculateOpacity(double gradient, double intensity, double voxelGradient, double radius, double alpha) {
+        if ((Math.abs(gradient) == 0) && (intensity == voxelGradient)) {
+            return alpha;
+        } else if ((Math.abs(gradient) > 0)
+                && ((voxelGradient - (radius * Math.abs(gradient))) <= intensity)
+                && (intensity <= (voxelGradient + (radius * Math.abs(gradient))))){
+            return (alpha * (1 - ((Math.abs(intensity - voxelGradient)) / (radius * Math.abs(gradient)))));
         } else {
-        return 0;
+            return 0;
         }
     }
     

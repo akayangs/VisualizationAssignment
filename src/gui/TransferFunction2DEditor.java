@@ -14,6 +14,7 @@ import volume.GradientVolume;
 import volume.Volume;
 import volume.VoxelGradient;
 import volvis.TFColor;
+import volvis.RaycastRenderer;
 
 /**
  *
@@ -24,12 +25,15 @@ public class TransferFunction2DEditor extends javax.swing.JPanel {
     private Volume vol;
     private GradientVolume gradvol;
     private TransferFunction2DView tfView;
+    private RaycastRenderer RR;
+    private VoxelGradient VG;
     public TriangleWidget triangleWidget;
     public int xbins, ybins;
     public double[] histogram;
     private short maxIntensity;
     public double maxGradientMagnitude;
     private ArrayList<TFChangeListener> listeners = new ArrayList<TFChangeListener>();
+    double alpha;
 
     
     public TransferFunction2DEditor(Volume volume, GradientVolume gradientvolume) {
@@ -38,7 +42,6 @@ public class TransferFunction2DEditor extends javax.swing.JPanel {
         this.vol = volume;
         this.gradvol = gradientvolume;
         compute2Dhistogram();
-
         this.tfView = new TransferFunction2DView(this);
         plotPanel.setLayout(new BorderLayout());
         plotPanel.add(tfView, BorderLayout.CENTER);
@@ -273,11 +276,14 @@ public class TransferFunction2DEditor extends javax.swing.JPanel {
             double value = Double.parseDouble(opacityLabel.getText());
             if (value < 0) {
                 value = 0;
-            } 
-            if (value > 1.0) {
+                alpha = value;
+            } else if ((value >= 0) && (value <= 1)) {
+                alpha = RR.calculateOpacity(VG.mag, tfView.intensityOut, maxIntensity, triangleWidget.radius, value);
+            } else {
                 value = 1.0;
+                alpha = value;
             }
-            triangleWidget.color.a = value;
+            triangleWidget.color.a = alpha;
         } catch (NumberFormatException e) {
             triangleWidget.color.a = 0.2;
         }
