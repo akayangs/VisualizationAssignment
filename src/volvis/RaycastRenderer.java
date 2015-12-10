@@ -399,13 +399,7 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
                     
                     if (((pixelCoord[0] < volume.getDimX() && pixelCoord[0] >= 0) || (pixelCoord[1] < volume.getDimY() && pixelCoord[1] >= 0) || (pixelCoord[2] < volume.getDimZ() && pixelCoord[2] >= 0) ) && val > 1) {
                         VoxelGradient VG = gradients.getGradient((int)Math.floor(pixelCoord[0]), (int)Math.floor(pixelCoord[1]), (int)Math.floor(pixelCoord[2])); 
-                        if (val == intensity && VG.mag == 0) {
-                            voxelColor.a = color.a * 1.0;
-                        } else if (VG.mag > 0.0 && ((val - radius * VG.mag) <= intensity) && ((val + radius * VG.mag) >= intensity) ) {
-                            voxelColor.a = color.a * (1.0 - (1 / radius) * (Math.abs((intensity - val)/ VG.mag)));
-                        } else {
-                            voxelColor.a = 0.0;
-                        }
+                        voxelColor.a = calculateOpacity(VG.mag, intensity, val, radius, tfEditor2D.alpha);
                         
                         if (volumeShading == true) {
                             if (VG.mag > 0.0 && voxelColor.a > 0.0) {

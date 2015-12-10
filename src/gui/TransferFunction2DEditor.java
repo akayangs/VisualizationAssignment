@@ -33,7 +33,7 @@ public class TransferFunction2DEditor extends javax.swing.JPanel {
     private short maxIntensity;
     public double maxGradientMagnitude;
     private ArrayList<TFChangeListener> listeners = new ArrayList<TFChangeListener>();
-    double alpha;
+    public double alpha;
 
     
     public TransferFunction2DEditor(Volume volume, GradientVolume gradientvolume) {
@@ -278,7 +278,7 @@ public class TransferFunction2DEditor extends javax.swing.JPanel {
                 value = 0;
                 alpha = value;
             } else if ((value >= 0) && (value <= 1)) {
-                alpha = RR.calculateOpacity(VG.mag, tfView.intensityOut, maxIntensity, triangleWidget.radius, value);
+                alpha = value;
             } else {
                 value = 1.0;
                 alpha = value;
