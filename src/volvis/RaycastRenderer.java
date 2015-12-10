@@ -387,14 +387,13 @@ public class RaycastRenderer extends Renderer implements TFChangeListener {
             for (int j = 0; j < image.getWidth(); j++) {
                 TFColor previousColor = new TFColor();
                 TFColor nextColor = new TFColor(); 
-                int samplingDis = 1;
                 for (int k = 0; k < volume.getDimZ(); k++){
                     pixelCoord[0] = uVec[0] * (i - imageCenter) + vVec[0] * (j - imageCenter)
-                            + volumeCenter[0] + samplingDis * viewVec[0];
+                            + volumeCenter[0] + k * viewVec[0];
                     pixelCoord[1] = uVec[1] * (i - imageCenter) + vVec[1] * (j - imageCenter)
-                            + volumeCenter[1] + samplingDis * viewVec[1];
+                            + volumeCenter[1] + k * viewVec[1];
                     pixelCoord[2] = uVec[2] * (i - imageCenter) + vVec[2] * (j - imageCenter)
-                            + volumeCenter[2] + samplingDis * viewVec[2];
+                            + volumeCenter[2] + k * viewVec[2];
                     int val = (int) triLinearGetVoxel(pixelCoord);
                     
                     if (((pixelCoord[0] < volume.getDimX() && pixelCoord[0] >= 0) || (pixelCoord[1] < volume.getDimY() && pixelCoord[1] >= 0) || (pixelCoord[2] < volume.getDimZ() && pixelCoord[2] >= 0) ) && val > 1) {
